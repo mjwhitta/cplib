@@ -1,0 +1,8 @@
+github.com/mjwhitta/cli v1.13.1 h1:AEquA9xsQkdEP+B0zq51mM1rfucAdqP+ZfrHACIDb9c=
+github.com/mjwhitta/cli v1.13.1/go.mod h1:x+Wtsd81WYsdIFkliVsiFHB9eCMfIkdhkHrb/drKcKs=
+github.com/mjwhitta/errors v1.0.6 h1:BO3Egii5W12Q22Lq5Lj48t4abk6ECfFLmFpkqKnUtPI=
+github.com/mjwhitta/errors v1.0.6/go.mod h1:MKxMaIKjHSWSyzOgvgiqGig+XH3HGLqp3BKyt5WAsnk=
+github.com/mjwhitta/hilighter v1.11.12 h1:9cx338QoNkMCr7xqgkFV76TXVkWEIbgnDjhxgLF64zo=
+github.com/mjwhitta/hilighter v1.11.12/go.mod h1:cNsXmN/ImJ7ntDUzGCbG/04ZMVwywV28ut0cPdxgx0g=
+github.com/mjwhitta/log v1.6.12 h1:NnTnzUzgw9GFL5KmlK5GntV9VuOfVfFVXcm1cwfIFoY=
+github.com/mjwhitta/log v1.6.12/go.mod h1:HMyjswGLk6NfEbmDal1mmoxXpCeCCWRZDm5QLYtuPKc=
