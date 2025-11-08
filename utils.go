@@ -1,7 +1,6 @@
 package cplib
 
 import (
-	"bytes"
 	"debug/elf"
 	"debug/pe"
 	"encoding/binary"
@@ -10,34 +9,10 @@ import (
 	"github.com/mjwhitta/errors"
 )
 
-//nolint:mnd // 2 is size of uint16
-func leUint16(b []byte) uint16 {
-	if len(b) < 2 {
-		b = append(
-			b,
-			bytes.Repeat([]byte{0x0}, 2-len(b))...,
-		)
-	}
-
-	return binary.LittleEndian.Uint16(b)
-}
-
-//nolint:mnd // 4 is size of uint32
-func leUint32(b []byte) uint32 {
-	if len(b) < 4 {
-		b = append(
-			b,
-			bytes.Repeat([]byte{0x0}, 4-len(b))...,
-		)
-	}
-
-	return binary.LittleEndian.Uint32(b)
-}
-
-func sectionOffset(
+func findSection(
 	addr uint32,
 	sections []*pe.Section,
-) (*pe.Section, uint32, error) {
+) (*pe.Section, error) {
 	var e error
 	var start uint32
 	var stop uint32
@@ -47,13 +22,21 @@ func sectionOffset(
 		stop = start + section.VirtualSize
 
 		if (addr >= start) && (addr <= stop) {
-			return section, addr - start, nil
+			return section, nil
 		}
 	}
 
 	e = errors.Newf("failed to find section for address 0x%08x", addr)
 
-	return nil, 0, e
+	return nil, e
+}
+
+func leUint16(b []byte) uint16 {
+	return binary.LittleEndian.Uint16(b)
+}
+
+func leUint32(b []byte) uint32 {
+	return binary.LittleEndian.Uint32(b)
 }
 
 func sortELFImportsCaseInsensitive(a, b elf.ImportedSymbol) int {

@@ -74,7 +74,7 @@ func ELFImports(fn string) ([]Import, error) {
 	for _, entry := range entries {
 		imports = append(
 			imports,
-			Import{Lib: entry.Library, Name: entry.Name},
+			Import{Library: entry.Library, Name: entry.Name},
 		)
 	}
 

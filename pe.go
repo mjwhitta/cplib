@@ -46,7 +46,10 @@ func PEImports(fn string) ([]Import, error) {
 
 	for _, entry := range entries {
 		if name, lib, ok := strings.Cut(entry, ":"); ok {
-			imports = append(imports, Import{Lib: lib, Name: name})
+			imports = append(
+				imports,
+				Import{Library: lib, Name: name},
+			)
 		}
 	}
 

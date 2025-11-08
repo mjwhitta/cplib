@@ -23,7 +23,7 @@ type state struct {
 
 func list(s *state) {
 	if len(s.exports) > 0 {
-		fmt.Printf("[*] %s exports\n", s.bin)
+		fmt.Printf("[*] %s exports (%d)\n", s.bin, len(s.exports))
 	}
 
 	for i := range s.exports {
@@ -31,11 +31,11 @@ func list(s *state) {
 	}
 
 	if len(s.imports) > 0 {
-		fmt.Printf("[*] %s imports\n", s.bin)
+		fmt.Printf("[*] %s imports (%d)\n", s.bin, len(s.imports))
 	}
 
-	for i := range s.imports {
-		fmt.Printf("%s (%s)\n", s.imports[i].Name, s.imports[i].Lib)
+	for _, im := range s.imports {
+		fmt.Printf("%s (%s)\n", im.Name, im.Library)
 	}
 }
 
@@ -93,6 +93,7 @@ func main() {
 func setup(bin string) (*state, error) {
 	var e error
 	var keep []cplib.Import
+	var lib string
 	var s *state = &state{bin: bin}
 
 	switch cplib.NaiveFileType(bin) {
@@ -133,7 +134,8 @@ func setup(bin string) (*state, error) {
 	// Filter imports
 	for _, im := range s.imports {
 		if len(flags.libs) > 0 {
-			if !slices.Contains(flags.libs, strings.ToLower(im.Lib)) {
+			lib = strings.ToLower(im.Library)
+			if !slices.Contains(flags.libs, lib) {
 				continue
 			}
 		}

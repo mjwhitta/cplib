@@ -66,7 +66,7 @@ func GenerateGo(
 			fmt.Sprintf(
 				"// %s from %s called by %s.\n",
 				im.Name,
-				im.Lib,
+				im.Library,
 				filepath.Base(bin),
 			),
 		)

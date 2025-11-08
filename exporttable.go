@@ -22,11 +22,9 @@ type ExportTable struct {
 	NumberOfFuncs         uint32
 	NumberOfNames         uint32
 
-	exportOffset  uint32
-	functions     map[string]uint32
-	pe            *pe.File
-	sectionData   []byte
-	sectionOffset uint32
+	functions    map[string]uint32
+	sectionData  []byte
+	sectionStart uint32
 }
 
 // GetExportTable will return the export table for the provided PE
@@ -35,7 +33,7 @@ func GetExportTable(pf *pe.File) (*ExportTable, error) {
 	var b []byte
 	var dataDir pe.DataDirectory
 	var e error
-	var nameOff uint32
+	var offset uint32
 	var s *pe.Section
 	var table *ExportTable
 
@@ -53,37 +51,38 @@ func GetExportTable(pf *pe.File) (*ExportTable, error) {
 		return &ExportTable{}, nil
 	}
 
-	// Get nameOff for export table
-	s, nameOff, e = sectionOffset(dataDir.VirtualAddress, pf.Sections)
+	// Find section for export table
+	s, e = findSection(dataDir.VirtualAddress, pf.Sections)
 	if e != nil {
 		return nil, e
 	}
+
+	// Get offset for export table
+	offset = dataDir.VirtualAddress - s.VirtualAddress
 
 	if b, e = s.Data(); e != nil {
 		return nil, errors.Newf("failed to read section data: %w", e)
 	}
 
-	if len(b) < int(nameOff)+40 {
+	if len(b) < int(offset)+40 {
 		return nil, errors.New("truncated export table")
 	}
 
 	table = &ExportTable{
-		AddressOfFuncs:        leUint32(b[nameOff+28 : nameOff+32]),
-		AddressOfNameOrdinals: leUint32(b[nameOff+36 : nameOff+40]),
-		AddressOfNames:        leUint32(b[nameOff+32 : nameOff+36]),
-		Base:                  leUint32(b[nameOff+16 : nameOff+20]),
-		Characteristics:       leUint32(b[nameOff+0 : nameOff+4]),
-		Checksum:              leUint32(b[nameOff+4 : nameOff+8]),
-		exportOffset:          dataDir.VirtualAddress,
+		AddressOfFuncs:        leUint32(b[offset+28 : offset+32]),
+		AddressOfNameOrdinals: leUint32(b[offset+36 : offset+40]),
+		AddressOfNames:        leUint32(b[offset+32 : offset+36]),
+		Base:                  leUint32(b[offset+16 : offset+20]),
+		Characteristics:       leUint32(b[offset+0 : offset+4]),
+		Checksum:              leUint32(b[offset+4 : offset+8]),
 		functions:             map[string]uint32{},
-		MajorVersion:          leUint16(b[nameOff+8 : nameOff+10]),
-		MinorVersion:          leUint16(b[nameOff+10 : nameOff+12]),
-		Name:                  leUint32(b[nameOff+12 : nameOff+16]),
-		NumberOfFuncs:         leUint32(b[nameOff+20 : nameOff+24]),
-		NumberOfNames:         leUint32(b[nameOff+24 : nameOff+28]),
-		pe:                    pf,
+		MajorVersion:          leUint16(b[offset+8 : offset+10]),
+		MinorVersion:          leUint16(b[offset+10 : offset+12]),
+		Name:                  leUint32(b[offset+12 : offset+16]),
+		NumberOfFuncs:         leUint32(b[offset+20 : offset+24]),
+		NumberOfNames:         leUint32(b[offset+24 : offset+28]),
 		sectionData:           b,
-		sectionOffset:         s.Offset,
+		sectionStart:          s.VirtualAddress,
 	}
 
 	if e = table.parse(); e != nil {
@@ -111,12 +110,12 @@ func (et *ExportTable) Names() []string {
 }
 
 func (et *ExportTable) parse() error {
-	var addr uint32
 	var e error
 	var name []byte
-	var nameOff uint32
+	var namePtr uint32
+	var namesOff uint32
 	var ordinal uint16
-	var ordOff uint32
+	var ordsOff uint32
 	var start uint32
 	var stop uint32
 
@@ -124,52 +123,49 @@ func (et *ExportTable) parse() error {
 		return nil
 	}
 
-	_, nameOff, e = sectionOffset(et.AddressOfNames, et.pe.Sections)
-	if e != nil {
-		return e
-	}
-
-	_, ordOff, e = sectionOffset(
-		et.AddressOfNameOrdinals,
-		et.pe.Sections,
-	)
-	if e != nil {
-		return e
-	}
+	namesOff = et.AddressOfNames - et.sectionStart
+	ordsOff = et.AddressOfNameOrdinals - et.sectionStart
 
 	for i := range et.NumberOfNames {
-		start = nameOff + 4*i //nolint:mnd // 4 is size of uint32
-
-		if int(start)+4 > len(et.sectionData) {
-			return errors.New("export offset is out of range")
-		}
-
-		addr = leUint32(et.sectionData[start : start+4])
-
-		_, start, e = sectionOffset(addr, et.pe.Sections)
-		if e != nil {
-			return e
-		}
-
-		if int(start) > len(et.sectionData) {
-			return errors.New("export name offset is out of range")
-		}
-
-		for stop = start; et.sectionData[stop] != 0; stop++ {
-		}
-
-		name = et.sectionData[start:stop]
-
-		start = ordOff + 2*i //nolint:mnd // 2 is size of uint16
-		stop = start + 2     //nolint:mnd // 2 is size of uint16
+		// Get export name pointer offset
+		start = namesOff + 4*i //nolint:mnd // 4 is size of uint32
+		stop = start + 4       //nolint:mnd // 4 is size of uint32
 
 		if int(stop) > len(et.sectionData) {
-			e = errors.New("export oridinal offset is out of range")
+			return errors.New("export is out of range")
+		}
+
+		// Get pointer to name
+		namePtr = leUint32(et.sectionData[start:stop])
+
+		// Get export name from pointer
+		start = namePtr - et.sectionStart
+
+		// Find null character
+		for stop = start; ; stop++ {
+			if int(stop) > len(et.sectionData) {
+				return errors.New("export name is out of range")
+			} else if et.sectionData[stop] == 0 {
+				break
+			}
+		}
+
+		// Extract export name
+		name = et.sectionData[start:stop]
+
+		// Get ordinal offset
+		start = ordsOff + 2*i //nolint:mnd // 2 is size of uint16
+		stop = start + 2      //nolint:mnd // 2 is size of uint16
+
+		if int(stop) > len(et.sectionData) {
+			e = errors.New("export oridinal is out of range")
 			return e
 		}
 
+		// Extract export ordinal
 		ordinal = leUint16(et.sectionData[start:stop])
 
+		// Store function
 		et.functions[string(name)] = uint32(ordinal) + et.Base
 	}
 
