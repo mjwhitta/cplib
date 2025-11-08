@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -69,6 +70,10 @@ func main() {
 		// If the file does not exist, no need to append
 		if ok, e := pathname.DoesExist(s.fn); (e != nil) || !ok {
 			flags.append = false
+		} else if !flags.append {
+			if !promptContinue(s) {
+				os.Exit(Good)
+			}
 		}
 
 		e = cplib.GenerateGo(
@@ -83,9 +88,43 @@ func main() {
 			panic(e)
 		}
 
+		if flags.append {
+			log.Goodf("Source appended to %s", s.fn)
+			return
+		}
+
 		log.Goodf("Source written to %s", s.fn)
 	default:
 		list(s)
+	}
+}
+
+func promptContinue(s *state) bool {
+	var input string
+
+	fmt.Printf("File %s already exists.\n", s.fn)
+
+	for {
+		fmt.Print("[a]ppend/[C]ancel/[o]verwrite: ")
+
+		input = "" // Have to reset in case previous input was invalid
+		if _, e := fmt.Scanln(&input); e != nil {
+			if e.Error() != "unexpected newline" {
+				println(e.Error())
+				continue
+			}
+		}
+
+		switch strings.ToLower(input) {
+		case "a", "append":
+			flags.append = true
+			return true
+		case "c", "cancel", "":
+			return false
+		case "o", "overwrite", "w", "write":
+			flags.append = false
+			return true
+		}
 	}
 }
 

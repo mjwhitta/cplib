@@ -5,6 +5,7 @@
 .vscode
 build
 cover.out
+generated_*.go
 local
 tags
 vendor
