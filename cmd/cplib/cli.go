@@ -22,6 +22,7 @@ const (
 
 // Flags
 var flags struct {
+	append   bool
 	exports  bool
 	generate bool
 	imports  bool
@@ -58,6 +59,13 @@ func init() {
 	cli.Title = "Copy Library"
 
 	// Parse cli flags
+	cli.Flag(
+		&flags.append,
+		"a",
+		"append",
+		false,
+		"Append to source file, if it already exists.",
+	)
 	cli.Flag(
 		&flags.exports,
 		"e",

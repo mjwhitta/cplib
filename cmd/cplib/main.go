@@ -10,6 +10,7 @@ import (
 	"github.com/mjwhitta/cplib"
 	"github.com/mjwhitta/errors"
 	"github.com/mjwhitta/log"
+	"github.com/mjwhitta/pathname"
 )
 
 type state struct {
@@ -65,12 +66,18 @@ func main() {
 
 	switch {
 	case flags.generate:
+		// If the file does not exist, no need to append
+		if ok, e := pathname.DoesExist(s.fn); (e != nil) || !ok {
+			flags.append = false
+		}
+
 		e = cplib.GenerateGo(
 			s.bin,
 			s.fn,
 			s.tags,
 			s.exports,
 			s.imports,
+			flags.append,
 		)
 		if e != nil {
 			panic(e)
