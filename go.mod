@@ -1,6 +1,6 @@
 module github.com/mjwhitta/cplib
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/mjwhitta/cli v1.13.1

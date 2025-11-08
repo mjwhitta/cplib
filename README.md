@@ -34,16 +34,40 @@ $ make
 **NOTE:** The generated source is meant to be used with something like
 [goDLL] so you may need to adjust the build tags.
 
+List exports from a DLL:
+
+```
+$ cplib -e "c:/program files/windows defender/mpclient.dll"
+```
+
 Generate source for all exports from a DLL:
 
 ```
-$ cplib "c:/program files/windows defender/mpclient.dll"
+$ cplib -e -g "c:/program files/windows defender/mpclient.dll"
+```
+
+List exports from a shared-object:
+
+```
+$ cplib -e /usr/lib/x86_64-linux-gnu/libyaml.so
+```
+
+Generate source for all exports from a DLL:
+
+```
+$ cplib -e -g /usr/lib/x86_64-linux-gnu/libyaml.so
+```
+
+List specific imports of an executable:
+
+```
+$ cplib -f mpclient.dll -i "c:/program files/windows defender/mpcmdrun.exe"
 ```
 
 Generate source for specific imports of an executable:
 
 ```
-$ cplib -l mpclient.dll "c:/program files/windows defender/mpcmdrun.exe"
+$ cplib -f mpclient.dll -g -i "c:/program files/windows defender/mpcmdrun.exe"
 ```
 
 ## Links
@@ -52,7 +76,6 @@ $ cplib -l mpclient.dll "c:/program files/windows defender/mpcmdrun.exe"
 
 ## TODO
 
-- Add support for Linux
 - Add support for macOS
 
 [goDLL]: https://github.com/mjwhitta/godll

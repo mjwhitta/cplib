@@ -46,7 +46,7 @@ func sectionOffset(
 		start = section.VirtualAddress
 		stop = start + section.VirtualSize
 
-		if (addr > start) && (addr < stop) {
+		if (addr >= start) && (addr <= stop) {
 			return section, addr - start, nil
 		}
 	}

@@ -22,18 +22,21 @@ const (
 
 // Flags
 var flags struct {
-	libs    cli.StringList
-	nocolor bool
-	output  string
-	verbose bool
-	version bool
+	exports  bool
+	generate bool
+	imports  bool
+	libs     cli.StringList
+	nocolor  bool
+	output   string
+	verbose  bool
+	version  bool
 }
 
 func init() {
 	// Configure cli package
 	cli.Align = true // Defaults to false
 	cli.Authors = []string{"Miles Whittaker <mj@whitta.dev>"}
-	cli.Banner = os.Args[0] + " [OPTIONS] <dll/exe>"
+	cli.Banner = os.Args[0] + " [OPTIONS] <binary>"
 	cli.BugEmail = "cplib.bugs@whitta.dev"
 
 	cli.ExitStatus(
@@ -47,21 +50,36 @@ func init() {
 		hl.Sprintf("  %d: Exception", Exception),
 	)
 	cli.Info(
-		"This tool will create Go source files with a template for",
-		"either the exports of the input library or the imports of",
-		"the input executable.",
+		"This tool can create a Go source file with a template for",
+		"the exports/imports of the specified binary.",
 	)
 
-	cli.SeeAlso = []string{"koppling"}
+	cli.SeeAlso = []string{"koppeling"}
 	cli.Title = "Copy Library"
 
 	// Parse cli flags
 	cli.Flag(
-		&flags.libs,
-		"l",
-		"lib",
-		"Filter imports to only include specified libraries.",
+		&flags.exports,
+		"e",
+		"exports",
+		false,
+		"Only parse exports.",
 	)
+	cli.Flag(
+		&flags.generate,
+		"g",
+		"generate",
+		false,
+		"Generate source for exports/imports.",
+	)
+	cli.Flag(
+		&flags.imports,
+		"i",
+		"imports",
+		false,
+		"Only parse imports.",
+	)
+	cli.Flag(&flags.libs, "f", "filter", "Filter imports by library.")
 	cli.Flag(
 		&flags.nocolor,
 		"no-color",
@@ -102,6 +120,12 @@ func validate() {
 		cli.Usage(MissingArgument)
 	case cli.NArg() > 1:
 		cli.Usage(ExtraArgument)
+	}
+
+	// If neither, default to both
+	if !flags.exports && !flags.imports {
+		flags.exports = true
+		flags.imports = true
 	}
 
 	// Normalize to lowercase

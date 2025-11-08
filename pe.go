@@ -11,15 +11,15 @@ import (
 // PEExports will read the provided filename and, if it's a PE, it
 // will return a list of functions that are exported.
 func PEExports(fn string) ([]string, error) {
-	var dll *pe.File
+	var bin *pe.File
 	var e error
 	var table *ExportTable
 
-	if dll, e = pe.Open(fn); e != nil {
-		return nil, errors.Newf("failed to open DLL: %w", e)
+	if bin, e = pe.Open(fn); e != nil {
+		return nil, errors.Newf("failed to open binary: %w", e)
 	}
 
-	if table, e = GetExportTable(dll); e != nil {
+	if table, e = GetExportTable(bin); e != nil {
 		return nil, e
 	}
 
@@ -29,16 +29,16 @@ func PEExports(fn string) ([]string, error) {
 // PEImports will read the provided filename and, if it's a PE, it
 // will return a list of functions that are imported.
 func PEImports(fn string) ([]Import, error) {
-	var exe *pe.File
+	var bin *pe.File
 	var e error
 	var imports []Import
 	var entries []string
 
-	if exe, e = pe.Open(fn); e != nil {
-		return nil, errors.Newf("failed to open DLL: %w", e)
+	if bin, e = pe.Open(fn); e != nil {
+		return nil, errors.Newf("failed to open binary: %w", e)
 	}
 
-	if entries, e = exe.ImportedSymbols(); e != nil {
+	if entries, e = bin.ImportedSymbols(); e != nil {
 		return nil, errors.Newf("failed to read imports: %w", e)
 	}
 

@@ -49,6 +49,10 @@ func GetExportTable(pf *pe.File) (*ExportTable, error) {
 		return nil, errors.New("invalid optional header format")
 	}
 
+	if dataDir.VirtualAddress == 0 {
+		return &ExportTable{}, nil
+	}
+
 	// Get nameOff for export table
 	s, nameOff, e = sectionOffset(dataDir.VirtualAddress, pf.Sections)
 	if e != nil {
@@ -92,6 +96,10 @@ func GetExportTable(pf *pe.File) (*ExportTable, error) {
 // Names will return a list of exported function names.
 func (et *ExportTable) Names() []string {
 	var names []string
+
+	if et.functions == nil {
+		return nil
+	}
 
 	for k := range et.functions {
 		names = append(names, k)
