@@ -158,7 +158,7 @@ func (et *ExportTable) parse() error {
 		stop = start + 2      //nolint:mnd // 2 is size of uint16
 
 		if int(stop) > len(et.sectionData) {
-			e = errors.New("export oridinal is out of range")
+			e = errors.New("export ordinal is out of range")
 			return e
 		}
 
