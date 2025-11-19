@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/mjwhitta/errors"
+	"github.com/mjwhitta/pathname"
 )
 
 // GenerateGo will generate Go source for all of the exports and
@@ -88,7 +89,7 @@ func GenerateGo(
 
 	// Open file
 	if !appendToFile {
-		f, e = os.Create(filepath.Clean(fn))
+		f, e = os.Create(pathname.ExpandPath(fn))
 	} else {
 		//nolint:mnd // u+rw,go=-
 		f, e = os.OpenFile(
